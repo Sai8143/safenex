@@ -552,6 +552,15 @@
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
+    const RENDER_BACKEND = "https://safenex-backend-g9yf.onrender.com";
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const isRender = window.location.host.includes('onrender.com');
+
+    const API_BASE = (isLocal || isRender) ? '' : RENDER_BACKEND;
+    const WS_BASE = (isLocal || isRender)
+      ? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`
+      : 'wss://safenex-backend-g9yf.onrender.com';
+
     // System State & Leaflet Map setup
     let map = L.map('map').setView([17.498, 78.147], 13);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
@@ -602,7 +611,7 @@
     // Load initial accident records from backend
     async function loadAccidents() {
       try {
-        const res = await fetch('/api/accidents');
+        const res = await fetch(`${API_BASE}/api/accidents`);
         const data = await res.json();
         currentAccidents = data;
         renderFeed(data);
@@ -735,7 +744,7 @@
       formData.append('longitude', lng);
 
       try {
-        const res = await fetch('/start-rtsp', { method: 'POST', body: formData });
+        const res = await fetch(`${API_BASE}/start-rtsp`, { method: 'POST', body: formData });
         const data = await res.json();
         alert(data.message);
         updateStats();
@@ -746,9 +755,7 @@
 
     // WebSocket real-time listener
     function setupWebSocket() {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/ws/alerts`;
-      const ws = new WebSocket(wsUrl);
+      const ws = new WebSocket(`${WS_BASE}/ws/alerts`);
 
       ws.onopen = () => {
         document.getElementById('ws-status').innerText = "WebSocket Connected";

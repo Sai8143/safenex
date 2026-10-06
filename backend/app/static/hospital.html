@@ -126,10 +126,16 @@
   </div>
 
   <script>
-    // WebSocket Real-time Alert Receiver
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws/alerts`;
-    const socket = new WebSocket(wsUrl);
+    const RENDER_BACKEND = "https://safenex-backend-g9yf.onrender.com";
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const isRender = window.location.host.includes('onrender.com');
+
+    const API_BASE = (isLocal || isRender) ? '' : RENDER_BACKEND;
+    const WS_BASE = (isLocal || isRender)
+      ? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`
+      : 'wss://safenex-backend-g9yf.onrender.com';
+
+    const socket = new WebSocket(`${WS_BASE}/ws/alerts`);
 
     socket.onopen = () => {
       document.getElementById('ws-status').innerText = 'LIVE WEBSOCKET OK';
@@ -170,7 +176,7 @@
 
     async function loadHospitalAlerts() {
       try {
-        const res = await fetch('/api/accidents');
+        const res = await fetch(`${API_BASE}/api/accidents`);
         const accidents = await res.json();
         const container = document.getElementById('alerts-list');
 
@@ -218,7 +224,7 @@
     }
 
     async function acceptPatient(id) {
-      await fetch(`/api/accidents/${id}/status`, {
+      await fetch(`${API_BASE}/api/accidents/${id}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'HOSPITAL_NOTIFIED' })

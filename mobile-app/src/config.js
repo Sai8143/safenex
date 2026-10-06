@@ -1,6 +1,6 @@
 let currentApiUrl = (typeof process !== "undefined" && process.env && process.env.EXPO_PUBLIC_API_URL)
   ? process.env.EXPO_PUBLIC_API_URL
-  : "http://127.0.0.1:8000";
+  : "https://safenex-backend-g9yf.onrender.com";
 
 export const getApiUrl = () => currentApiUrl;
 
