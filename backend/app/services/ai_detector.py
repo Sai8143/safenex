@@ -89,8 +89,8 @@ def detect_vehicles_multiscale(frame):
     class_names = []
     confidences = []
 
-    # Pass 1: Full frame
-    res_full = model(frame, conf=0.10, classes=VEHICLE_CLASSES)
+    # Pass 1: Full frame sensitive scan
+    res_full = model(frame, conf=0.05, classes=VEHICLE_CLASSES)
     for r in res_full:
         for box in r.boxes:
             b = tuple(map(int, box.xyxy[0]))
@@ -101,12 +101,12 @@ def detect_vehicles_multiscale(frame):
             confidences.append(conf)
 
     # Pass 2: Central zoom scan (focus on inner screen / road center)
-    y1_crop, y2_crop = int(h * 0.1), int(h * 0.9)
-    x1_crop, x2_crop = int(w * 0.1), int(w * 0.9)
+    y1_crop, y2_crop = int(h * 0.05), int(h * 0.95)
+    x1_crop, x2_crop = int(w * 0.05), int(w * 0.95)
     crop_frame = frame[y1_crop:y2_crop, x1_crop:x2_crop]
 
     if crop_frame.size > 0:
-        res_crop = model(crop_frame, conf=0.08, classes=VEHICLE_CLASSES)
+        res_crop = model(crop_frame, conf=0.04, classes=VEHICLE_CLASSES)
         for r in res_crop:
             for box in r.boxes:
                 cb = tuple(map(int, box.xyxy[0]))

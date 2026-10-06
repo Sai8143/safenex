@@ -557,6 +557,7 @@
         <!-- Video Live Preview -->
         <div style="position: relative; width: 100%; border-radius: 10px; overflow: hidden; background: #000; display: none;" id="webcam-box">
           <video id="webcam-video" autoplay playsinline muted style="width: 100%; height: 180px; object-fit: cover;"></video>
+          <img id="webcam-annotated-overlay" style="position: absolute; inset: 0; width: 100%; height: 180px; object-fit: cover; display: none;" alt="AI Bounding Boxes">
           <div id="webcam-status-overlay" style="position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.7); color: #10b981; font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; padding: 4px 8px; border-radius: 4px; border: 1px solid #10b981;">
             ● SCANNING LIVE CAMERA
           </div>
@@ -925,11 +926,19 @@
           });
           const data = await res.json();
 
+          if (data.annotated_image) {
+            const overlayImg = document.getElementById('webcam-annotated-overlay');
+            if (overlayImg) {
+              overlayImg.src = `${API_BASE}/uploads/${data.annotated_image}`;
+              overlayImg.style.display = 'block';
+            }
+          }
+
           if (data.status === 'confirmed' || (data.severity_level && data.severity_level !== 'NONE')) {
             statusText.innerHTML = `<span style="color:#ef4444; font-weight:bold;">🚨 ${data.message} (${Math.round((data.confidence_score||0.8)*100)}%)</span>`;
             loadAccidents();
           } else {
-            statusText.innerHTML = `<span style="color:#10b981;">🟢 Normal scene. AI confidence: ${Math.round((data.confidence_score||0.1)*100)}%</span>`;
+            statusText.innerHTML = `<span style="color:#10b981;">🟢 Scanning feed. AI Confidence: ${Math.round((data.confidence_score||0.1)*100)}%</span>`;
           }
         } catch (e) {
           console.warn("Webcam frame post error:", e);
