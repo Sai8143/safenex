@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hospital Emergency & ER Dispatch Portal - AcciSense</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --panel-bg: rgba(18, 25, 41, 0.8);
+      --panel-border: rgba(255, 255, 255, 0.08);
+      --accent-hospital: #ef4444;
+      --accent-green: #10b981;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg-dark); color: var(--text-main); min-height: 100vh; padding: 1.5rem; }
+    header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 1.5rem; border-bottom: 1px solid var(--panel-border); margin-bottom: 1.5rem; }
+    .brand { display: flex; align-items: center; gap: 0.75rem; }
+    .brand-icon { width: 42px; height: 42px; background: var(--accent-hospital); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; color: #fff; box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
+    .brand-title { font-size: 1.3rem; font-weight: 800; color: #fff; }
+    .brand-subtitle { font-size: 0.75rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    .portal-nav { display: flex; gap: 0.5rem; }
+    .nav-btn { padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.8rem; font-weight: 600; text-decoration: none; color: var(--text-muted); background: rgba(255,255,255,0.05); border: 1px solid var(--panel-border); transition: all 0.2s; }
+    .nav-btn:hover, .nav-btn.active { color: #fff; background: var(--accent-hospital); border-color: var(--accent-hospital); }
+    
+    /* Emergency Alert Banner */
+    .emergency-banner {
+      display: none;
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.95), rgba(185, 28, 28, 0.95));
+      border: 2px solid #f87171;
+      border-radius: 14px;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 0 30px rgba(239, 68, 68, 0.5);
+      animation: pulseAlert 2s infinite;
+    }
+    @keyframes pulseAlert {
+      0% { box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
+      50% { box-shadow: 0 0 35px rgba(239, 68, 68, 0.8); }
+      100% { box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
+    }
+    .banner-text {
+      font-family: 'JetBrains Mono', monospace;
+      white-space: pre-wrap;
+      font-size: 0.9rem;
+      color: #ffffff;
+      line-height: 1.4;
+    }
+
+    .grid-container { display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; }
+    .panel { background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 16px; padding: 1.25rem; }
+    .panel-title { font-size: 1rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+    
+    .alert-card { background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+    .hospital-tag { background: var(--accent-hospital); color: #fff; padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.75rem; font-weight: 700; }
+    .time-tag { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-muted); }
+    .location-info { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.5rem; }
+    .geo-coords { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: #60a5fa; margin-bottom: 0.75rem; display: block; }
+    
+    .status-row { display: flex; gap: 1rem; margin-top: 1rem; }
+    .status-item { background: rgba(255,255,255,0.03); padding: 0.6rem 0.8rem; border-radius: 8px; flex: 1; border: 1px solid var(--panel-border); }
+    .status-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; }
+    .status-val { font-size: 0.85rem; font-weight: 700; color: var(--accent-green); margin-top: 0.2rem; }
+    
+    .action-btn { background: var(--accent-green); color: #fff; border: none; padding: 0.6rem 1rem; border-radius: 8px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; margin-top: 1rem; }
+    .action-btn:hover { background: #059669; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="brand-icon"><i class="fa-solid fa-hospital"></i></div>
+      <div>
+        <div class="brand-title">Hospital Emergency & ER Trauma Center</div>
+        <div class="brand-subtitle">AcciSense Dispatch Network • Hospital Unit #04 • LIVE STREAM</div>
+      </div>
+    </div>
+
+    <div class="portal-nav">
+      <a href="/dashboard" class="nav-btn"><i class="fa-solid fa-chart-pie"></i> Surveillance HUD</a>
+      <a href="/hospital" class="nav-btn active"><i class="fa-solid fa-hospital"></i> Hospital ER</a>
+      <a href="/police" class="nav-btn"><i class="fa-solid fa-building-shield"></i> Police Unit</a>
+      <a href="/ambulance" class="nav-btn"><i class="fa-solid fa-truck-medical"></i> Ambulance EMS</a>
+    </div>
+  </header>
+
+  <!-- Live Emergency Dispatch Banner -->
+  <div id="emergency-banner" class="emergency-banner">
+    <div id="banner-text" class="banner-text"></div>
+  </div>
+
+  <div class="grid-container">
+    <div class="panel">
+      <div class="panel-title"><i class="fa-solid fa-kit-medical" style="color: var(--accent-hospital);"></i> ER Trauma Patient Inbound Alerts</div>
+      <div id="alerts-list">
+        <!-- Dynamic Hospital Alerts -->
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title"><i class="fa-solid fa-notes-medical" style="color: var(--accent-green);"></i> ER Trauma Readiness</div>
+      <div style="display: flex; flex-direction: column; gap: 1rem;">
+        <div class="status-item">
+          <div class="status-label">Trauma Bay Status</div>
+          <div class="status-val">READY • 3 BEDS OPEN</div>
+        </div>
+        <div class="status-item">
+          <div class="status-label">Surgical ICU Team</div>
+          <div class="status-val">ON STANDBY</div>
+        </div>
+        <div class="status-item">
+          <div class="status-label">Blood Bank Supply</div>
+          <div class="status-val">O-NEGATIVE AVAILABLE</div>
+        </div>
+        <div class="status-item">
+          <div class="status-label">Live Dispatch Sync</div>
+          <div class="status-val" style="color: #60a5fa;" id="ws-status">CONNECTING...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // WebSocket Real-time Alert Receiver
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/ws/alerts`;
+    const socket = new WebSocket(wsUrl);
+
+    socket.onopen = () => {
+      document.getElementById('ws-status').innerText = 'LIVE WEBSOCKET OK';
+      document.getElementById('ws-status').style.color = '#10b981';
+    };
+
+    socket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.event === 'ACCIDENT_CONFIRMED' || data.type === 'ACCIDENT_ALERT' || data.status === 'confirmed' || data.status === 'CONFIRMED') {
+          showEmergencyBanner(data);
+          loadHospitalAlerts();
+        } else if (data.type === 'STATUS_UPDATE') {
+          loadHospitalAlerts();
+        }
+      } catch (err) {
+        console.warn("WS parse error:", err);
+      }
+    };
+
+    function showEmergencyBanner(data) {
+      const banner = document.getElementById('emergency-banner');
+      const textElem = document.getElementById('banner-text');
+
+      const msg = data.formatted_message || `================ EMERGENCY ALERT ================
+🚨 ACCIDENT CONFIRMED
+🕒 Time (UTC): ${data.timestamp || new Date().toISOString()}
+📍 Location: ${data.location || data.location_name || 'Traffic Zone'}
+🌐 GPS: ${data.latitude}, ${data.longitude}
+🏥 Hospital Services: NOTIFIED
+🚓 Police Department: NOTIFIED
+🚑 Ambulance Services: NOTIFIED
+=================================================`;
+
+      textElem.innerText = msg;
+      banner.style.display = 'block';
+    }
+
+    async function loadHospitalAlerts() {
+      try {
+        const res = await fetch('/api/accidents');
+        const accidents = await res.json();
+        const container = document.getElementById('alerts-list');
+
+        if (accidents.length === 0) {
+          container.innerHTML = `<div style="color: var(--text-muted); text-align: center; padding: 2rem;">No emergency trauma alerts active at this moment.</div>`;
+          return;
+        }
+
+        container.innerHTML = accidents.map(acc => `
+          <div class="alert-card">
+            <div class="card-header">
+              <div>
+                <span class="hospital-tag">🏥 HOSPITAL NOTIFIED</span>
+                ${acc.severity_level && acc.severity_level !== 'NONE' ? `<span style="font-size:0.7rem; font-weight:700; color:#ef4444; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); padding:2px 6px; border-radius:4px; margin-left:4px;">${acc.severity_level}</span>` : ''}
+              </div>
+              <span class="time-tag">${new Date(acc.timestamp).toLocaleString()}</span>
+            </div>
+            <div class="location-info">📍 ${acc.location_name || 'Traffic Junction Crash Zone'}</div>
+            <a class="geo-coords" href="https://maps.google.com/?q=${acc.latitude},${acc.longitude}" target="_blank">
+              <i class="fa-solid fa-map-location-dot"></i> GPS: ${Number(acc.latitude).toFixed(6)}, ${Number(acc.longitude).toFixed(6)}
+            </a>
+            ${acc.evidence_hash ? `<div style="font-size:0.7rem; font-family:'JetBrains Mono',monospace; color:#94a3b8; margin: 4px 0;"><i class="fa-solid fa-fingerprint"></i> SHA-256: ${acc.evidence_hash.substring(0,16)}... (Forensic Integrity)</div>` : ''}
+            <div class="status-row">
+              <div class="status-item">
+                <div class="status-label">Incident ID</div>
+                <div class="status-val" style="color:#fff; font-family:'JetBrains Mono'; font-size:0.75rem;">${acc.id.substring(0,8)}</div>
+              </div>
+              <div class="status-item">
+                <div class="status-label">AI Confidence</div>
+                <div class="status-val">${Math.round((acc.confidence_score||0.8)*100)}%</div>
+              </div>
+              <div class="status-item">
+                <div class="status-label">Response Status</div>
+                <div class="status-val" style="color: #60a5fa;">${acc.status.toUpperCase()}</div>
+              </div>
+            </div>
+            <button class="action-btn" onclick="acceptPatient('${acc.id}')">
+              <i class="fa-solid fa-check-double"></i> Confirm ER Team Ready
+            </button>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function acceptPatient(id) {
+      await fetch(`/api/accidents/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'HOSPITAL_NOTIFIED' })
+      });
+      alert("🏥 ER Trauma Team status updated to HOSPITAL_NOTIFIED.");
+      loadHospitalAlerts();
+    }
+
+    loadHospitalAlerts();
+  </script>
+</body>
+</html>

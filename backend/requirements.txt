@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+python-multipart
+numpy
+opencv-python-headless
+pillow
+ultralytics
+deep-sort-realtime
+torch
+torchvision
+sqlalchemy
+reportlab
+requests
