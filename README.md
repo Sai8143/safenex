@@ -1,16 +1,15 @@
 ---
-title: AcciSense AI Accident Detection
+title: SafeNex AI Accident Detection
 emoji: 🚨
 colorFrom: red
 colorTo: blue
-sdk: docker
-app_port: 7860
+sdk: static
 pinned: false
 ---
 
-# 🚨 AcciSense: AI-Powered Real-Time Accident Detection & Emergency Response System
+# 🚨 SafeNex: AI-Powered Real-Time Accident Detection & Emergency Response System
 
-AcciSense is an end-to-end intelligent road traffic safety platform that detects vehicle collisions in real time using multi-scale computer vision, tracks vehicle kinematics across consecutive frames, confirms accidents via temporal persistence analysis, and automatically dispatches emergency alerts with live GPS coordinates to Hospital, Police, and Ambulance departments over WebSockets.
+SafeNex is an end-to-end intelligent road traffic safety platform that detects vehicle collisions in real time using multi-scale computer vision, tracks vehicle kinematics across consecutive frames, confirms accidents via temporal persistence analysis, and automatically dispatches emergency alerts with live GPS coordinates to Hospital, Police, and Ambulance departments over WebSockets.
 
 ---
 

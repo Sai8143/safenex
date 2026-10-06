@@ -37,7 +37,7 @@ from app.services.websocket_manager import ws_manager
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
-    title="AcciSense Real-Time AI Accident Detection API",
+    title="SafeNex Real-Time AI Accident Detection API",
     version="2.0",
     description="Automated crash detection, evidence annotation, and real-time emergency dispatch platform."
 )

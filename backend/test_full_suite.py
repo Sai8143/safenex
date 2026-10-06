@@ -224,7 +224,7 @@ def run_full_suite():
         resp = client.get(route)
         assert resp.status_code == 200
         assert "/ws/alerts" in resp.text
-        assert "AcciSense" in resp.text
+        assert "SafeNex" in resp.text
     print("  ✅ All 4 Department Portals active with live WebSocket integrations")
 
     # -------------------------------------------------------------
