@@ -21,6 +21,7 @@ from app.schemas import AccidentResponse, HealthResponse, StatusUpdateRequest, S
 from app.services.ai_detector import analyze_image_accident
 from app.services.video_detector import detect_video_accident, _default_tracker
 from app.services.notifier import notify_emergency, log_no_accident
+from app.services.location import EMERGENCY_FACILITIES, find_nearest_emergency_facilities
 from app.services.rtsp_stream import (
     process_rtsp_stream,
     process_camera_stream,
@@ -430,6 +431,14 @@ def delete_accident(id: str, db: Session = Depends(get_db)):
     db.delete(acc)
     db.commit()
     return {"message": "Accident log deleted"}
+
+@app.get("/api/emergency-facilities")
+def get_emergency_facilities(lat: Optional[float] = None, lng: Optional[float] = None):
+    facilities = EMERGENCY_FACILITIES
+    if lat is not None and lng is not None:
+        nearest = find_nearest_emergency_facilities(lat, lng)
+        return {"facilities": facilities, "nearest": nearest}
+    return {"facilities": facilities}
 
 @app.get("/api/stats", response_model=SystemStatsResponse)
 def get_system_stats(db: Session = Depends(get_db)):

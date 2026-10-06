@@ -712,21 +712,83 @@
       }).join('');
     }
 
+    let facilityMarkers = [];
+
+    // Render Emergency Hospitals, Police Stations, and Live Ambulances on Map
+    async function loadEmergencyFacilities(lat, lng) {
+      try {
+        const query = (lat && lng) ? `?lat=${lat}&lng=${lng}` : '';
+        const res = await fetch(`${API_BASE}/api/emergency-facilities${query}`);
+        const data = await res.json();
+        
+        facilityMarkers.forEach(m => map.removeLayer(m));
+        facilityMarkers = [];
+
+        const facilities = data.facilities;
+
+        // 1. Render Hospitals 🏥
+        if (facilities && facilities.hospitals) {
+          facilities.hospitals.forEach(h => {
+            const hIcon = L.divIcon({
+              className: 'hospital-map-pin',
+              html: `<div style="background: #ef4444; color: #fff; width: 26px; height: 26px; border-radius: 50%; border: 3px solid #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; box-shadow: 0 0 15px rgba(239,68,68,0.6);"><i class="fa-solid fa-hospital"></i></div>`,
+              iconSize: [26, 26], iconAnchor: [13, 13]
+            });
+            const m = L.marker([h.lat, h.lon], { icon: hIcon }).addTo(map)
+              .bindPopup(`<b>🏥 ${h.name}</b><br>ER Status: ${h.beds} Beds Available<br><span style="color:#10b981; font-weight:bold;">TRAUMA LEVEL-1 ACTIVE</span>`);
+            facilityMarkers.push(m);
+          });
+        }
+
+        // 2. Render Police Control Stations 🚓
+        if (facilities && facilities.police_stations) {
+          facilities.police_stations.forEach(p => {
+            const pIcon = L.divIcon({
+              className: 'police-map-pin',
+              html: `<div style="background: #3b82f6; color: #fff; width: 26px; height: 26px; border-radius: 50%; border: 3px solid #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; box-shadow: 0 0 15px rgba(59,130,246,0.6);"><i class="fa-solid fa-building-shield"></i></div>`,
+              iconSize: [26, 26], iconAnchor: [13, 13]
+            });
+            const m = L.marker([p.lat, p.lon], { icon: pIcon }).addTo(map)
+              .bindPopup(`<b>🚓 ${p.name}</b><br>Patrol Units: ${p.patrols} Active<br><span style="color:#60a5fa; font-weight:bold;">HIGHWAY PATROL ONLINE</span>`);
+            facilityMarkers.push(m);
+          });
+        }
+
+        // 3. Render Ambulance Dispatch Stations 🚑
+        if (facilities && facilities.ambulance_stations) {
+          facilities.ambulance_stations.forEach(a => {
+            const aIcon = L.divIcon({
+              className: 'ambulance-map-pin',
+              html: `<div style="background: #f59e0b; color: #fff; width: 26px; height: 26px; border-radius: 50%; border: 3px solid #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; box-shadow: 0 0 15px rgba(245,158,11,0.6);"><i class="fa-solid fa-truck-medical"></i></div>`,
+              iconSize: [26, 26], iconAnchor: [13, 13]
+            });
+            const m = L.marker([a.lat, a.lon], { icon: aIcon }).addTo(map)
+              .bindPopup(`<b>🚑 ${a.name}</b><br>EMS Units: ${a.units} Ready<br><span style="color:#fbbf24; font-weight:bold;">RAPID RESPONSE DISPATCH</span>`);
+            facilityMarkers.push(m);
+          });
+        }
+      } catch (err) {
+        console.warn("Failed to load emergency facilities:", err);
+      }
+    }
+
     // Render Map Pins
     function renderMapMarkers(accidents) {
-      // Clear old markers
+      // Clear old accident markers
       Object.values(markers).forEach(m => map.removeLayer(m));
       markers = {};
 
       accidents.forEach(acc => {
         const marker = L.marker([acc.latitude, acc.longitude], { icon: getMarkerIcon(acc.status) })
           .addTo(map)
-          .bindPopup(`<b>${acc.status.toUpperCase()} Crash</b><br>${acc.location_name || 'Location'}<br>Confidence: ${Math.round((acc.confidence_score||0.8)*100)}%`);
+          .bindPopup(`<b>🚨 ${acc.status.toUpperCase()} Crash Incident</b><br>${acc.location_name || 'Location'}<br>Confidence: ${Math.round((acc.confidence_score||0.8)*100)}%<br><b>Notified:</b> Hospital, Police, Ambulance`);
         markers[acc.id] = marker;
       });
 
       if (accidents.length > 0) {
-        map.panTo([accidents[0].latitude, accidents[0].longitude]);
+        loadEmergencyFacilities(accidents[0].latitude, accidents[0].longitude);
+      } else {
+        loadEmergencyFacilities();
       }
     }
 
@@ -737,7 +799,7 @@
     // Update Accident Status
     async function updateStatus(id, newStatus) {
       try {
-        const res = await fetch(`/api/accidents/${id}/status`, {
+        const res = await fetch(`${API_BASE}/api/accidents/${id}/status`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status: newStatus })
@@ -753,7 +815,7 @@
     // Update Stats Bar
     async function updateStats() {
       try {
-        const res = await fetch('/api/stats');
+        const res = await fetch(`${API_BASE}/api/stats`);
         const stats = await res.json();
         document.getElementById('stat-total').innerText = stats.total_accidents;
         document.getElementById('stat-confirmed').innerText = stats.confirmed_count;
