@@ -90,6 +90,10 @@
       font-family: 'JetBrains Mono', monospace;
     }
 
+    .portal-nav { display: flex; gap: 0.5rem; }
+    .nav-btn { padding: 0.45rem 0.8rem; border-radius: 8px; font-size: 0.78rem; font-weight: 600; text-decoration: none; color: var(--text-muted); background: rgba(255,255,255,0.05); border: 1px solid var(--panel-border); transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.35rem; }
+    .nav-btn:hover, .nav-btn.active { color: #fff; background: var(--accent-blue); border-color: var(--accent-blue); }
+
     .status-badges {
       display: flex;
       align-items: center;
@@ -452,6 +456,13 @@
         <div class="brand-title">SafeNex AI Command Center</div>
         <div class="brand-subtitle">Automated Crash Detection & Dispatch Platform</div>
       </div>
+    </div>
+
+    <div class="portal-nav">
+      <a href="dashboard.html" class="nav-btn active"><i class="fa-solid fa-tower-observation"></i> Command Center</a>
+      <a href="hospital.html" class="nav-btn"><i class="fa-solid fa-hospital"></i> Hospital ER</a>
+      <a href="police.html" class="nav-btn"><i class="fa-solid fa-building-shield"></i> Police Control</a>
+      <a href="ambulance.html" class="nav-btn"><i class="fa-solid fa-truck-medical"></i> EMS Ambulance</a>
     </div>
 
     <div class="status-badges">
