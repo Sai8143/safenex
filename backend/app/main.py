@@ -7,6 +7,8 @@ from sqlalchemy.orm import Session
 from uuid import uuid4
 from datetime import datetime
 import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import cv2
 import numpy as np
 import threading
