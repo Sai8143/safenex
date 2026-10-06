@@ -544,6 +544,39 @@
         </button>
       </div>
 
+      <!-- Live Camera Stream Controller -->
+      <div class="panel-title" style="margin-top: 1rem;">
+        <span><i class="fa-solid fa-camera" style="color: var(--accent-green);"></i> Live Webcam Crash Detector</span>
+      </div>
+
+      <div class="cctv-control" style="background: rgba(255, 255, 255, 0.02); padding: 0.85rem; border-radius: 12px; border: 1px solid var(--panel-border);">
+        <p style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+          Point your laptop camera at YouTube accident videos or live traffic to run AI crash detection frame-by-frame!
+        </p>
+
+        <!-- Video Live Preview -->
+        <div style="position: relative; width: 100%; border-radius: 10px; overflow: hidden; background: #000; display: none;" id="webcam-box">
+          <video id="webcam-video" autoplay playsinline muted style="width: 100%; height: 180px; object-fit: cover;"></video>
+          <div id="webcam-status-overlay" style="position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.7); color: #10b981; font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; padding: 4px 8px; border-radius: 4px; border: 1px solid #10b981;">
+            ● SCANNING LIVE CAMERA
+          </div>
+        </div>
+
+        <canvas id="webcam-canvas" style="display: none;"></canvas>
+
+        <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+          <button class="btn btn-resolve" style="flex: 1; justify-content: center; padding: 0.6rem;" id="btn-start-cam" onclick="startWebcamDetection()">
+            <i class="fa-solid fa-video"></i> Start Live Camera Scan
+          </button>
+          <button class="btn" style="background: #ef4444; color: #fff; display: none; justify-content: center; padding: 0.6rem;" id="btn-stop-cam" onclick="stopWebcamDetection()">
+            <i class="fa-solid fa-stop"></i> Stop
+          </button>
+        </div>
+        <div id="webcam-last-result" style="font-size: 0.72rem; font-family: 'JetBrains Mono', monospace; color: var(--text-muted); margin-top: 0.4rem; text-align: center;">
+          Camera idle. Click start to begin scanning.
+        </div>
+      </div>
+
     </div>
 
   </div>
@@ -763,13 +796,99 @@
       }
     }
 
-    // WebSocket real-time listener
+    // -------------------------------------------------------------
+    // Live Webcam AI Crash Detection Engine
+    // -------------------------------------------------------------
+    let webcamStream = null;
+    let webcamInterval = null;
+
+    async function startWebcamDetection() {
+      const videoElem = document.getElementById('webcam-video');
+      const webcamBox = document.getElementById('webcam-box');
+      const btnStart = document.getElementById('btn-start-cam');
+      const btnStop = document.getElementById('btn-stop-cam');
+      const statusText = document.getElementById('webcam-last-result');
+
+      try {
+        webcamStream = await navigator.mediaDevices.getUserMedia({
+          video: { width: 640, height: 480, facingMode: "user" }
+        });
+        videoElem.srcObject = webcamStream;
+        webcamBox.style.display = 'block';
+        btnStart.style.display = 'none';
+        btnStop.style.display = 'inline-flex';
+        statusText.innerText = "Camera active. Sending frames to AI model every 1.5s...";
+
+        webcamInterval = setInterval(captureAndAnalyzeFrame, 1500);
+      } catch (err) {
+        alert("Camera permission denied or camera unavailable: " + err.message);
+      }
+    }
+
+    function stopWebcamDetection() {
+      if (webcamInterval) clearInterval(webcamInterval);
+      if (webcamStream) {
+        webcamStream.getTracks().forEach(track => track.stop());
+      }
+      document.getElementById('webcam-box').style.display = 'none';
+      document.getElementById('btn-start-cam').style.display = 'inline-flex';
+      document.getElementById('btn-stop-cam').style.display = 'none';
+      document.getElementById('webcam-last-result').innerText = "Camera stopped.";
+    }
+
+    async function captureAndAnalyzeFrame() {
+      const videoElem = document.getElementById('webcam-video');
+      const canvas = document.getElementById('webcam-canvas');
+      const statusText = document.getElementById('webcam-last-result');
+
+      if (!videoElem.videoWidth) return;
+
+      canvas.width = videoElem.videoWidth;
+      canvas.height = videoElem.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(videoElem, 0, 0, canvas.width, canvas.height);
+
+      canvas.toBlob(async (blob) => {
+        if (!blob) return;
+
+        const formData = new FormData();
+        formData.append('file', blob, 'webcam_frame.jpg');
+        formData.append('latitude', (window.laptopLat || 17.498).toString());
+        formData.append('longitude', (window.laptopLng || 78.147).toString());
+
+        try {
+          const res = await fetch(`${API_BASE}/detect-accident`, {
+            method: 'POST',
+            body: formData
+          });
+          const data = await res.json();
+
+          if (data.status === 'confirmed' || (data.severity_level && data.severity_level !== 'NONE')) {
+            statusText.innerHTML = `<span style="color:#ef4444; font-weight:bold;">🚨 ${data.message} (${Math.round((data.confidence_score||0.8)*100)}%)</span>`;
+            loadAccidents();
+          } else {
+            statusText.innerHTML = `<span style="color:#10b981;">🟢 Normal scene. AI confidence: ${Math.round((data.confidence_score||0.1)*100)}%</span>`;
+          }
+        } catch (e) {
+          console.warn("Webcam frame post error:", e);
+        }
+      }, 'image/jpeg', 0.8);
+    }
+
+    // WebSocket real-time listener with auto-reconnect & health ping
     function setupWebSocket() {
+      const statusBadge = document.getElementById('ws-status');
+      statusBadge.innerText = "Connecting...";
+      statusBadge.style.color = "var(--accent-amber)";
+
+      // Initial HTTP Health ping to wake up Render container if sleeping
+      fetch(`${API_BASE}/health`).catch(() => {});
+
       const ws = new WebSocket(`${WS_BASE}/ws/alerts`);
 
       ws.onopen = () => {
-        document.getElementById('ws-status').innerText = "WebSocket Connected";
-        document.getElementById('ws-status').style.color = "var(--accent-green)";
+        statusBadge.innerText = "WebSocket Connected";
+        statusBadge.style.color = "var(--accent-green)";
       };
 
       ws.onmessage = (event) => {
@@ -784,9 +903,14 @@
       };
 
       ws.onclose = () => {
-        document.getElementById('ws-status').innerText = "WebSocket Disconnected";
-        document.getElementById('ws-status').style.color = "var(--accent-red)";
+        statusBadge.innerText = "WebSocket Reconnecting...";
+        statusBadge.style.color = "var(--accent-amber)";
         setTimeout(setupWebSocket, 3000);
+      };
+
+      ws.onerror = (err) => {
+        console.warn("WebSocket error:", err);
+        ws.close();
       };
     }
 

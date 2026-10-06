@@ -136,26 +136,36 @@
       ? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`
       : 'wss://safenex-backend-g9yf.onrender.com';
 
-    const socket = new WebSocket(`${WS_BASE}/ws/alerts`);
+    function initWebSocket() {
+      fetch(`${API_BASE}/health`).catch(() => {});
+      const socket = new WebSocket(`${WS_BASE}/ws/alerts`);
 
-    socket.onopen = () => {
-      document.getElementById('ws-status').innerText = 'LIVE WEBSOCKET OK';
-      document.getElementById('ws-status').style.color = '#10b981';
-    };
+      socket.onopen = () => {
+        const elem = document.getElementById('ws-status');
+        if (elem) { elem.innerText = 'LIVE WEBSOCKET OK'; elem.style.color = '#10b981'; }
+      };
 
-    socket.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.event === 'ACCIDENT_CONFIRMED' || data.type === 'ACCIDENT_ALERT' || data.status === 'confirmed' || data.status === 'CONFIRMED') {
-          showEmergencyBanner(data);
-          loadAmbulanceAlerts();
-        } else if (data.type === 'STATUS_UPDATE') {
-          loadAmbulanceAlerts();
+      socket.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.event === 'ACCIDENT_CONFIRMED' || data.type === 'ACCIDENT_ALERT' || data.status === 'confirmed' || data.status === 'CONFIRMED') {
+            showEmergencyBanner(data);
+            loadAmbulanceAlerts();
+          } else if (data.type === 'STATUS_UPDATE') {
+            loadAmbulanceAlerts();
+          }
+        } catch (err) {
+          console.warn("WS parse error:", err);
         }
-      } catch (err) {
-        console.warn("WS parse error:", err);
-      }
-    };
+      };
+
+      socket.onclose = () => {
+        const elem = document.getElementById('ws-status');
+        if (elem) { elem.innerText = 'RECONNECTING...'; elem.style.color = '#f59e0b'; }
+        setTimeout(initWebSocket, 3000);
+      };
+    }
+    initWebSocket();
 
     function showEmergencyBanner(data) {
       const banner = document.getElementById('emergency-banner');
